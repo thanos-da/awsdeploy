@@ -1,0 +1,25 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Docker Hub...
+      - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  build:
+    commands:
+      - echo Build started on `date`
+      - docker build -t my-node-app .
+      - docker tag my-node-app $DOCKER_USERNAME/my-node-app:latest
+  post_build:
+    commands:
+      - echo Pushing image...
+      - docker push $DOCKER_USERNAME/my-node-app:latest
+      - echo Saving image locally for backup...
+      - docker save $DOCKER_USERNAME/my-node-app:latest > my-node-app.tar
+      - echo Uploading artifact to S3...
+      - aws s3 cp my-node-app.tar s3://my-artifact-bucket/backups/my-node-app-`date +%Y%m%d%H%M%S`.tar
+artifacts:
+  files:
+    - appspec.yml
+    - scripts/*
+  
